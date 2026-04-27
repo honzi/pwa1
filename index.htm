@@ -1,0 +1,190 @@
+ <!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Rezist X - Revizní Přístroj</title>
+    <style>
+        body {
+            background: #000;
+            color: #fff;
+            font-family: 'Segoe UI', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden; /* Zamezí scrollování celého webu */
+        }
+
+        .device {
+            width: 95vw;
+            max-width: 360px;
+            height: 95vh; /* Změněno, aby se vešlo i na menší telefony */
+            background: #111;
+            border: 3px solid #ff0000;
+            border-radius: 30px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 0 30px rgba(255,0,0,0.5);
+            overflow: hidden;
+        }
+
+        .header {
+            text-align: center;
+            padding: 10px;
+            color: #ff0000;
+            font-weight: bold;
+            font-size: 1.4em;
+            letter-spacing: 2px;
+            border-bottom: 2px solid #333;
+            background: #050505;
+        }
+
+        .display {
+            flex-grow: 1;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            justify-content: space-around; /* Rovnoměrně rozprostře prvky */
+        }
+
+        .status-area {
+            height: 80px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 5em;
+        }
+
+        .measure-row {
+            background: #1a1a1a;
+            border-left: 5px solid #444;
+            padding: 12px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .label { font-size: 0.7em; color: #aaa; text-transform: uppercase; }
+        .val { font-size: 1.6em; font-family: 'Courier New', monospace; font-weight: bold; color: #fff; }
+        .unit { color: #ff0000; font-size: 0.8em; font-weight: bold; }
+
+        .footer {
+            padding: 15px;
+            background: #050505;
+            border-top: 1px solid #333;
+            display: flex;
+            justify-content: center;
+        }
+
+        #startBtn {
+            background: #ff0000;
+            color: #fff;
+            border: none;
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 0 15px rgba(255,0,0,0.4);
+            outline: none;
+            -webkit-tap-highlight-color: transparent; /* Odstraní modrý stín při kliku na mobilu */
+        }
+
+        #startBtn:active { transform: scale(0.9); background: #cc0000; }
+
+        .ok { color: #00ff00; filter: drop-shadow(0 0 10px #00ff00); }
+        .fail { color: #ff0000; filter: drop-shadow(0 0 10px #ff0000); }
+        .measuring-text { color: #ff0000; text-align: center; font-weight: bold; animation: pulse 0.6s infinite; height: 15px; }
+        @keyframes pulse { 50% { opacity: 0.2; } }
+    </style>
+</head>
+<body>
+
+<div class="device">
+    <div class="header">REZIST X</div>
+    <div class="display">
+        <div id="msg" class="measuring-text" style="visibility: hidden;">MĚŘÍM...</div>
+        <div id="statusIcon" class="status-area"></div>
+
+        <div class="measure-row">
+            <div><div class="label">Odpor PE (Rpe)</div><div class="val" id="rpe">--.--</div></div>
+            <div class="unit">&Omega;</div>
+        </div>
+
+        <div class="measure-row">
+            <div><div class="label">Izolace (Riso)</div><div class="val" id="riso">--.--</div></div>
+            <div class="unit">M&Omega;</div>
+        </div>
+
+        <div class="measure-row">
+            <div><div class="label">Proud (Isub)</div><div class="val" id="isub">--.--</div></div>
+            <div class="unit">mA</div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <button id="startBtn">START</button>
+    </div>
+</div>
+
+<script>
+    if('serviceWorker' in navigator){
+        navigator.serviceWorker.register('sw.js');
+    }
+
+    const btn = document.getElementById('startBtn');
+    let lastClick = 0;
+
+    btn.addEventListener('click', (e) => {
+        e.preventDefault(); // Zamezí zoomování a posunům při kliku
+        const now = Date.now();
+        const isFailMode = (now - lastClick < 450);
+        lastClick = now;
+
+        runApp(isFailMode);
+    });
+
+    function runApp(isFail) {
+        document.getElementById('statusIcon').innerHTML = "";
+        document.getElementById('msg').style.visibility = "visible";
+
+        // Reset barev na bílou
+        const values = ['rpe', 'riso', 'isub'];
+        values.forEach(id => {
+            const el = document.getElementById(id);
+            el.innerText = "....";
+            el.style.color = "#fff";
+        });
+
+        if(navigator.vibrate) navigator.vibrate(40);
+
+        setTimeout(() => {
+            document.getElementById('msg').style.visibility = "hidden";
+            const icon = document.getElementById('statusIcon');
+
+            if (!isFail) {
+                icon.innerHTML = "<span class='ok'>✔</span>";
+                document.getElementById('rpe').innerText = (Math.random() * 0.12).toFixed(2);
+                document.getElementById('riso').innerText = (Math.random() * (40 - 15) + 15).toFixed(2);
+                document.getElementById('isub').innerText = (Math.random() * 0.45).toFixed(2);
+                if(navigator.vibrate) navigator.vibrate([100, 50, 100]);
+            } else {
+                icon.innerHTML = "<span class='fail'>✖</span>";
+                document.getElementById('rpe').innerText = (Math.random() * (5 - 2) + 2).toFixed(2);
+                document.getElementById('riso').innerText = "0.01";
+                document.getElementById('isub').innerText = (Math.random() * (10 - 5) + 5).toFixed(2);
+
+                // Červená pro chybu
+                values.forEach(id => document.getElementById(id).style.color = "#ff0000");
+                if(navigator.vibrate) navigator.vibrate([500, 100, 500]);
+            }
+        }, 1000);
+    }
+</script>
+
+</body>
+</html>

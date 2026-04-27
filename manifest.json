@@ -1,0 +1,23 @@
+{
+  "background_color": "#000",
+  "display": "standalone",
+  "icons": [
+    {
+      "sizes": "192x192",
+      "src": "192.png",
+      "type": "image/png"
+    },
+    {
+      "sizes": "512x512",
+      "src": "512.png",
+      "type": "image/png"
+    }
+  ],
+  "name": "Rezist X - Revizní Přístroj",
+  "orientation": "portrait-primary",
+  "prefer_related_applications": false,
+  "scope": "/pwa1/",
+  "short_name": "Rezist X",
+  "start_url": "index.htm",
+  "theme_color": "#000"
+}
